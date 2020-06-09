@@ -11,6 +11,8 @@ HELP_TEXT = "\n".join((
     "[Display Fixes] will display the list of encoding fixes this program will make.",
     "",
     "[Fix Encodings] will carry out the actual encoding fixes. It will also display the encoding fixes made.",
+    "",
+    "Note: If you enter the path to a folder, it will fix the encoding of every file (recursively) within the folder.",
 ))
 
 def fix_encoding(root, s, log):
@@ -23,8 +25,8 @@ def fix_encoding(root, s, log):
 def fix(root, f, log, apply_fix):
     fixed = fix_encoding(root, f, log)
     if fixed != f:
-        original_file = r'%s\%s' % (root, f)
-        new_file = r'%s\%s' % (root, fixed)
+        original_file = r'%s\%s' % (root, f) if root.strip() != '' else f
+        new_file = r'%s\%s' % (root, fixed) if root.strip() != '' else fixed
         log('%s -> %s\n' % (f, fixed))
         if apply_fix:
             shutil.move(original_file, new_file)
@@ -46,6 +48,11 @@ def command_button(controller, apply_fix):
         controller.text_print('ERROR: Path is not a valid file or folder.\n\n')
         controller.text_print(HELP_TEXT)
         return
+        
+    if apply_fix:
+        controller.text_print('Fixes made:\n\n')
+    else:
+        controller.text_print('Planned fixes:\n\n')
     
     if is_folder:
         walk = list(os.walk(path_text))
@@ -54,6 +61,10 @@ def command_button(controller, apply_fix):
         for root, dirs, files in walk: # sorted in decreasing order of depth
             for f in files: fix(root, f, controller.text_print, apply_fix)
             for d in dirs: fix(root, d, controller.text_print, apply_fix)
+            
+        root = os.path.dirname(os.path.normpath(path_text))
+        f = os.path.basename(os.path.normpath(path_text))
+        fix(root, f, controller.text_print, apply_fix)
     elif is_file:
         root, f = os.path.split(path_text)
         fix(root, f, controller.text_print, apply_fix)
